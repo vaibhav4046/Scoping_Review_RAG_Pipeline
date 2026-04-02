@@ -1,0 +1,54 @@
+# ── Web Framework ──
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+
+# ── Database ──
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.1
+pgvector==0.3.6
+
+# ── Validation ──
+pydantic==2.10.4
+pydantic-settings==2.7.1
+email-validator==2.2.0
+
+# ── Auth ──
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==3.2.2
+
+# ── Task Queue ──
+celery[redis]==5.4.0
+redis==5.2.1
+flower==2.0.1
+
+# ── LLM Providers ──
+google-generativeai==0.8.4
+groq==0.15.0
+ollama==0.4.7
+httpx==0.28.1
+
+# ── PDF Processing ──
+PyMuPDF==1.25.3
+
+# ── RAG / Embeddings ──
+numpy==2.2.2
+tiktoken==0.8.0
+
+# ── PubMed ──
+biopython==1.85
+aiohttp==3.11.12
+
+# ── Utilities ──
+python-dotenv==1.0.1
+tenacity==9.0.0
+structlog==24.4.0
+
+# ── Vaibhav: ChromaDB (local vector store) ──
+chromadb==0.5.23
+
+# ── Testing ──
+pytest==8.3.4
+pytest-asyncio==0.24.0
