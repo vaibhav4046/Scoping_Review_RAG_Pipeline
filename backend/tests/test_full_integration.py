@@ -159,7 +159,7 @@ class TestVaibhavSchemas:
     @requires_asyncpg
     def test_pico_retrieval_response(self):
         from app.schemas.retrieval import PICORetrievalResponse
-        pico = PICORetrievalResponse(study_id=1, context_chunks=[],
+        pico = PICORetrievalResponse(study_id="1", context_chunks=[],
                                       total_chunks_available=10, queries_used=["population"])
         assert pico.total_chunks_available == 10
 
@@ -279,8 +279,8 @@ class TestPrinceTasks:
 class TestCrossModuleIntegration:
     @requires_asyncpg
     def test_main_api_router(self):
-        from app.api.v1.router import api_router
-        assert api_router is not None
+        from app.api.v1.router import router
+        assert router is not None
 
     @requires_asyncpg
     def test_all_api_routers_import(self):
