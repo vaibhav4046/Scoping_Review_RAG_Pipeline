@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import type {
@@ -11,7 +11,6 @@ import type {
   Extraction,
   Validation,
 } from "@/lib/api";
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const PIPELINE_STAGES = ["created", "searching", "screening", "extracting", "validating", "completed"];
 
@@ -45,19 +44,8 @@ export default function ReviewDetailPage() {
   const [extractions, setExtractions] = useState<Extraction[]>([]);
   const [validations, setValidations] = useState<Validation[]>([]);
   const [tasks, setTasks] = useState<TaskStatus[]>([]);
-  const currentTask = tasks.find(t => t.status === "running");
-  const taskRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  useEffect(() => {
-  if (currentTask && taskRefs.current[currentTask.task_id]) {
-    taskRefs.current[currentTask.task_id]?.scrollIntoView({
-      behavior: "smooth",
-      block: "center"
-    });
-  }
-}, [tasks]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
-  const [selectedStudyId, setSelectedStudyId] = useState<string | null>(null)
 
   // Search form
   const [searchQuery, setSearchQuery] = useState("");
@@ -308,7 +296,6 @@ export default function ReviewDetailPage() {
       {/* Tab Content */}
       {activeTab === "overview" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-
           {/* Search Panel */}
           <div className="card">
             <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>🔎 PubMed Search</h3>
@@ -368,80 +355,6 @@ export default function ReviewDetailPage() {
                 {actionLoading === "validation" ? <span className="spinner" /> : "🔍 Run Validation"}
               </button>
             </div>
-          </div>
-
-            {/* Pipeline Progress */}
-            <div className="card">
-              <h3 style={{ marginBottom: 16 }}>Pipeline Progress</h3>
-              {tasks.length === 0 ? (
-                <p>No progress yet</p>
-              ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {tasks.map((task) => {
-                  const pct =
-                  task.total_items > 0
-                  ? Math.round((task.completed_items / task.total_items) * 100)
-                  : 0;
-                  return (
-
-                   <div 
-                      key={task.task_id}
-                       ref={(el) => {
-                         taskRefs.current[task.task_id] = el;
-                     }}
-                      style={{
-                        padding: 8,
-                        borderRadius: 6,
-                        background:
-                          task.status === "running"
-                            ? "rgba(59,130,246,0.1)"
-                            : "transparent",
-                        border:
-                          task.status === "running"
-                            ? "1px solid #3b82f6"
-                            : "1px solid transparent",
-                        transition: "all 0.2s ease"
-  }}>
-
-  
-                    <div style={{ marginBottom: 6, fontSize: 14 }}>
-                      <strong>{task.task_type.toUpperCase()}</strong> — {task.status}
-
-                      </div>
-
-                      <div style={{
-                        height: 10,
-                        background: "#1e293b",
-                        borderRadius: 6,
-                        overflow: "hidden"
-                      }}
-                      >
-                        <div style={{
-                          width: `${pct}%`,
-                          height: "100%",
-                          background:
-                           task.status === "completed"
-                            ? "#22c55e"
-                            : task.status === "running"
-                            ? "#3b82f6"
-                            : task.status === "failed"
-                            ? "#ef4444"
-                            : "#64748b",
-                          transition: "width 0.3s ease",
-                          opacity: task.status === "running" ? 0.8 : 1
-                        }}
-                        />
-                        </div>
-                        
-                        <div style={{ fontSize: 12, marginTop: 4 }}>
-                          {task.completed_items} / {task.total_items} ({pct}%)
-                        </div>
-
-               </div>
-        );
-      })}
-  )}
-</div>
           </div>
         </div>
       )}
@@ -545,215 +458,70 @@ export default function ReviewDetailPage() {
         </div>
       )}
 
-{activeTab === "extraction" && (
-  <>
-    {extractions.length === 0 ? (
-      <div className="card">
-        <div className="empty-state">
-          <div className="empty-state-icon">📊</div>
-          <div className="empty-state-title">No extractions yet</div>
-          <div className="empty-state-desc">
-            Run PICO extraction on included studies.
-          </div>
-        </div>
-      </div>
-    ) : (
-      <>
-        <div style={{ display: "grid", gap: 24 }}>
-          {extractions.map((ext) => {
-            const study = studyMap[ext.study_id];
-
-            return (
-              <div key={ext.id} className="card">
-                <div className="flex items-center justify-between mb-16">
-                  <div>
-                    <div
-                      style={{
-                        fontWeight: 600,
-                        fontSize: 14,
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      {study?.title || ext.study_id}
-                    </div>
-                    <div className="text-xs text-muted mt-8">
-                      Model: {ext.model_used} |{" "}
-                      {new Date(ext.created_at).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pico-grid">
-                  {[
-                    { key: "population", label: "Population", cls: "p" },
-                    { key: "intervention", label: "Intervention", cls: "i" },
-                    { key: "comparator", label: "Comparator", cls: "c" },
-                    { key: "outcome", label: "Outcome", cls: "o" },
-                    { key: "study_design", label: "Study Design", cls: "p" },
-                    { key: "sample_size", label: "Sample Size", cls: "i" },
-                    { key: "duration", label: "Duration", cls: "c" },
-                    { key: "setting", label: "Setting", cls: "o" },
-                  ].map(({ key, label, cls }) => {
-                    const val = (ext as any)[key];
-                    const conf = ext.confidence_scores?.[key] ?? 0;
-                    const quote = ext.source_quotes?.[key];
-
-                    return (
-                      <div key={key} className="pico-card">
-                        <div className={`pico-card-label ${cls}`}>{label}</div>
-                        <div
-                          className={`pico-card-value ${
-                            val === "Not Reported" ? "not-reported" : ""
-                          }`}
-                        >
-                          {val}
-                        </div>
-                        <ConfidenceBar value={conf} />
-                        {quote && (
-                          <div className="pico-card-quote">
-                            &ldquo;{quote}&rdquo;
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div style={{ marginTop: 32 }}>
-          <h3>PICO Table View</h3>
-
-          <table style={{ width: "100%", marginTop: 12 }}>
-            <thead>
-              <tr>
-                <th>Study</th>
-                <th>Population</th>
-                <th>Intervention</th>
-                <th>Comparator</th>
-                <th>Outcome</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {extractions.map((e) => (
-                <tr
-                  key={e.id}
-                  onClick={() => setSelectedStudyId(e.study_id)}
-                  style={{
-                    cursor: "pointer",
-                    backgroundColor:
-                      selectedStudyId === e.study_id ? "#1e293b" : "transparent",
-                  }}
-                >
-                  <td>{e.study_id}</td>
-                  <td>{e.population || "-"}</td>
-                  <td>{e.intervention || "-"}</td>
-                  <td>{e.comparator || "-"}</td>
-                  <td>{e.outcome || "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {selectedStudyId && (
-          <div style={{ marginTop: 32 }}>
-            <h3>Document Side-Bar</h3>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 20,
-                alignItems: "start",
-              }}
-            >
-              <div
-                style={{
-                  border: "1px solid #334155",
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  minHeight: 600,
-                  background: "#0f172a",
-                }}
-              >
-                <div style={{ padding: 12, borderBottom: "1px solid #334155" }}>
-                  <strong>PDF Viewer</strong>
-                </div>
-
-                <iframe
-                  src={`${API_BASE}/api/v1/reviews/${reviewId}/studies/${selectedStudyId}/pdf`}
-                  width="100%"
-                  height="600"
-                  style={{ border: "none" }}
-                  title="PDF Viewer"
-                />
-              </div>
-
-              <div
-                style={{
-                  border: "1px solid #334155",
-                  borderRadius: 8,
-                  padding: 16,
-                  background: "#111827",
-                  minHeight: 600,
-                }}
-              >
-                <h4 style={{ marginBottom: 16 }}>Extracted Data</h4>
-
-                {extractions
-                  .filter((e) => e.study_id === selectedStudyId)
-                  .map((e) => (
-                    <div key={e.id}>
-                      <p><strong>Study ID:</strong> {e.study_id}</p>
-                      <p><strong>Population:</strong> {e.population || "-"}</p>
-                      <p><strong>Intervention:</strong> {e.intervention || "-"}</p>
-                      <p><strong>Comparator:</strong> {e.comparator || "-"}</p>
-                      <p><strong>Outcome:</strong> {e.outcome || "-"}</p>
-                      <p><strong>Study Design:</strong> {e.study_design || "-"}</p>
-                      <p><strong>Sample Size:</strong> {e.sample_size || "-"}</p>
-                      <p><strong>Duration:</strong> {e.duration || "-"}</p>
-                      <p><strong>Setting:</strong> {e.setting || "-"}</p>
-
-                      <div style={{ marginTop: 20 }}>
-                        <h4>Source Quotes</h4>
-
-                        {Object.entries(e.source_quotes || {}).length === 0 ? (
-                          <p>-</p>
-                        ) : (
-                          Object.entries(e.source_quotes || {}).map(([key, quote]) => (
-                            <div
-                              key={key}
-                              style={{
-                                marginBottom: 12,
-                                padding: 12,
-                                border: "1px solid #334155",
-                                borderRadius: 6,
-                              }}
-                            >
-                              <div style={{ fontWeight: 600, marginBottom: 6 }}>
-                                {key}
-                              </div>
-                              <div style={{ color: "#cbd5e1" }}>{quote}</div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  ))}
+      {activeTab === "extraction" && (
+        <>
+          {extractions.length === 0 ? (
+            <div className="card">
+              <div className="empty-state">
+                <div className="empty-state-icon">📊</div>
+                <div className="empty-state-title">No extractions yet</div>
+                <div className="empty-state-desc">Run PICO extraction on included studies.</div>
               </div>
             </div>
-          </div>
-        )}
-      </>
-    )}
-  </>
-)}
+          ) : (
+            <div style={{ display: "grid", gap: 24 }}>
+              {extractions.map((ext) => {
+                const study = studyMap[ext.study_id];
+                return (
+                  <div key={ext.id} className="card">
+                    <div className="flex items-center justify-between mb-16">
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>
+                          {study?.title || ext.study_id}
+                        </div>
+                        <div className="text-xs text-muted mt-8">
+                          Model: {ext.model_used} | {new Date(ext.created_at).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
 
-{activeTab === "validation" && (
+                    <div className="pico-grid">
+                      {[
+                        { key: "population", label: "Population", cls: "p" },
+                        { key: "intervention", label: "Intervention", cls: "i" },
+                        { key: "comparator", label: "Comparator", cls: "c" },
+                        { key: "outcome", label: "Outcome", cls: "o" },
+                        { key: "study_design", label: "Study Design", cls: "p" },
+                        { key: "sample_size", label: "Sample Size", cls: "i" },
+                        { key: "duration", label: "Duration", cls: "c" },
+                        { key: "setting", label: "Setting", cls: "o" },
+                      ].map(({ key, label, cls }) => {
+                        const val = (ext as any)[key];
+                        const conf = ext.confidence_scores?.[key] ?? 0;
+                        const quote = ext.source_quotes?.[key];
+                        return (
+                          <div key={key} className="pico-card">
+                            <div className={`pico-card-label ${cls}`}>{label}</div>
+                            <div className={`pico-card-value ${val === "Not Reported" ? "not-reported" : ""}`}>
+                              {val}
+                            </div>
+                            <ConfidenceBar value={conf} />
+                            {quote && (
+                              <div className="pico-card-quote">&ldquo;{quote}&rdquo;</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === "validation" && (
         <div className="table-container">
           {validations.length === 0 ? (
             <div className="empty-state">
