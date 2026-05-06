@@ -1,5 +1,9 @@
 # Scoping Review AI — Large Text AI Analysis Platform
 
+<p align="center">
+  <a href="#"><img src="docs/screenshots/hero.png" alt="Production RAG pipeline for systematic literature review" width="100%" /></a>
+</p>
+
 A production-grade system for automating scoping reviews using LLMs with **zero hallucination tolerance**.
 
 ## Architecture
